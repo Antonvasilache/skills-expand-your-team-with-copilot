@@ -996,6 +996,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.location.hash) {
     const activityName = decodeURIComponent(window.location.hash.substring(1));
     
+    // Retry configuration for shared link navigation
+    const SCROLL_RETRY_MAX = 10;
+    const SCROLL_RETRY_INTERVAL_MS = 200;
+    
     // Function to scroll to activity
     const scrollToActivity = () => {
       const activityCards = document.querySelectorAll(".activity-card h4");
@@ -1017,15 +1021,13 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Try to scroll to activity with retry mechanism
     let retries = 0;
-    const maxRetries = 10;
-    const retryInterval = 200;
     
     const tryScroll = () => {
-      if (scrollToActivity() || retries >= maxRetries) {
+      if (scrollToActivity() || retries >= SCROLL_RETRY_MAX) {
         return;
       }
       retries++;
-      setTimeout(tryScroll, retryInterval);
+      setTimeout(tryScroll, SCROLL_RETRY_INTERVAL_MS);
     };
     
     // Start attempting to scroll after a short delay
