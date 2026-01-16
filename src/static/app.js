@@ -664,7 +664,8 @@ document.addEventListener("DOMContentLoaded", () => {
             showMessage("Failed to copy link", "error");
           });
         } else {
-          // Fallback for older browsers
+          // Fallback for older browsers (using deprecated execCommand)
+          // Note: document.execCommand is deprecated but kept for backwards compatibility
           const textArea = document.createElement("textarea");
           textArea.value = shareUrl;
           textArea.style.position = "fixed";
@@ -992,25 +993,42 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchActivities();
 
   // Handle shared activity links (scroll to activity if hash is present)
-  window.addEventListener("load", () => {
-    if (window.location.hash) {
-      const activityName = decodeURIComponent(window.location.hash.substring(1));
-      // Wait for activities to load, then scroll to the activity
-      setTimeout(() => {
-        const activityCards = document.querySelectorAll(".activity-card h4");
-        for (const heading of activityCards) {
-          if (heading.textContent === activityName) {
-            heading.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
-            // Briefly highlight the activity card
-            heading.parentElement.style.transition = "box-shadow 0.3s ease";
-            heading.parentElement.style.boxShadow = "0 0 20px rgba(26, 35, 126, 0.5)";
-            setTimeout(() => {
-              heading.parentElement.style.boxShadow = "";
-            }, 2000);
-            break;
-          }
+  if (window.location.hash) {
+    const activityName = decodeURIComponent(window.location.hash.substring(1));
+    
+    // Function to scroll to activity
+    const scrollToActivity = () => {
+      const activityCards = document.querySelectorAll(".activity-card h4");
+      for (const heading of activityCards) {
+        if (heading.textContent === activityName) {
+          heading.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Highlight the activity card using CSS custom properties
+          const card = heading.parentElement;
+          card.style.transition = "box-shadow 0.3s ease";
+          card.style.boxShadow = "0 0 20px rgba(26, 35, 126, 0.5)";
+          setTimeout(() => {
+            card.style.boxShadow = "";
+          }, 2000);
+          return true;
         }
-      }, 1000);
-    }
-  });
+      }
+      return false;
+    };
+    
+    // Try to scroll to activity with retry mechanism
+    let retries = 0;
+    const maxRetries = 10;
+    const retryInterval = 200;
+    
+    const tryScroll = () => {
+      if (scrollToActivity() || retries >= maxRetries) {
+        return;
+      }
+      retries++;
+      setTimeout(tryScroll, retryInterval);
+    };
+    
+    // Start attempting to scroll after a short delay
+    setTimeout(tryScroll, 300);
+  }
 });
