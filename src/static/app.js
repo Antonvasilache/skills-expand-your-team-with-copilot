@@ -656,12 +656,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     switch (shareType) {
       case "copy":
-        // Copy link to clipboard
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          showMessage("Link copied to clipboard!", "success");
-        }).catch(() => {
-          showMessage("Failed to copy link", "error");
-        });
+        // Copy link to clipboard with fallback
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            showMessage("Link copied to clipboard!", "success");
+          }).catch(() => {
+            showMessage("Failed to copy link", "error");
+          });
+        } else {
+          // Fallback for older browsers
+          const textArea = document.createElement("textarea");
+          textArea.value = shareUrl;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand("copy");
+            showMessage("Link copied to clipboard!", "success");
+          } catch (err) {
+            showMessage("Failed to copy link", "error");
+          }
+          document.body.removeChild(textArea);
+        }
         event.preventDefault();
         break;
 
@@ -973,4 +990,27 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthentication();
   initializeFilters();
   fetchActivities();
+
+  // Handle shared activity links (scroll to activity if hash is present)
+  window.addEventListener("load", () => {
+    if (window.location.hash) {
+      const activityName = decodeURIComponent(window.location.hash.substring(1));
+      // Wait for activities to load, then scroll to the activity
+      setTimeout(() => {
+        const activityCards = document.querySelectorAll(".activity-card h4");
+        for (const heading of activityCards) {
+          if (heading.textContent === activityName) {
+            heading.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+            // Briefly highlight the activity card
+            heading.parentElement.style.transition = "box-shadow 0.3s ease";
+            heading.parentElement.style.boxShadow = "0 0 20px rgba(26, 35, 126, 0.5)";
+            setTimeout(() => {
+              heading.parentElement.style.boxShadow = "";
+            }, 2000);
+            break;
+          }
+        }
+      }, 1000);
+    }
+  });
 });
