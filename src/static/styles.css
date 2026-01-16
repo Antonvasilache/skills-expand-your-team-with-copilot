@@ -664,3 +664,85 @@ footer {
 #logout-button:hover {
   background-color: rgba(255, 255, 255, 0.3);
 }
+
+/* Share button and menu styles */
+.share-container {
+  position: relative;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.share-button {
+  background-color: var(--primary-light);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  justify-content: center;
+}
+
+.share-button:hover {
+  background-color: var(--primary);
+  transform: scale(1.02);
+}
+
+.share-icon {
+  font-size: 0.9rem;
+}
+
+.share-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  margin-bottom: 8px;
+  z-index: 100;
+  min-width: 160px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.share-menu.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.share-option:hover {
+  background-color: var(--background);
+}
+
+.share-option-icon {
+  font-size: 1rem;
+  width: 18px;
+  text-align: center;
+}
+
+.share-option-text {
+  flex: 1;
+}

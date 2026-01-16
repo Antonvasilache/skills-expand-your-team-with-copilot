@@ -568,6 +568,34 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
         }
+        <div class="share-container">
+          <button class="share-button" data-activity="${name}">
+            <span class="share-icon">🔗</span>
+            <span>Share Activity</span>
+          </button>
+          <div class="share-menu" data-activity="${name}">
+            <div class="share-option" data-share-type="copy">
+              <span class="share-option-icon">📋</span>
+              <span class="share-option-text">Copy Link</span>
+            </div>
+            <a class="share-option" data-share-type="facebook" target="_blank" rel="noopener noreferrer">
+              <span class="share-option-icon">📘</span>
+              <span class="share-option-text">Facebook</span>
+            </a>
+            <a class="share-option" data-share-type="twitter" target="_blank" rel="noopener noreferrer">
+              <span class="share-option-icon">🐦</span>
+              <span class="share-option-text">Twitter</span>
+            </a>
+            <a class="share-option" data-share-type="whatsapp" target="_blank" rel="noopener noreferrer">
+              <span class="share-option-icon">💬</span>
+              <span class="share-option-text">WhatsApp</span>
+            </a>
+            <a class="share-option" data-share-type="email">
+              <span class="share-option-icon">📧</span>
+              <span class="share-option-text">Email</span>
+            </a>
+          </div>
+        </div>
       </div>
     `;
 
@@ -587,8 +615,106 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Add click handler for share button
+    const shareButton = activityCard.querySelector(".share-button");
+    const shareMenu = activityCard.querySelector(".share-menu");
+    
+    shareButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // Close all other share menus
+      document.querySelectorAll(".share-menu").forEach((menu) => {
+        if (menu !== shareMenu) {
+          menu.classList.remove("show");
+        }
+      });
+      // Toggle this menu
+      shareMenu.classList.toggle("show");
+    });
+
+    // Handle share options
+    const shareOptions = activityCard.querySelectorAll(".share-option");
+    shareOptions.forEach((option) => {
+      option.addEventListener("click", (e) => {
+        handleShare(e, name, details, formattedSchedule);
+        shareMenu.classList.remove("show");
+      });
+    });
+
     activitiesList.appendChild(activityCard);
   }
+
+  // Function to handle sharing
+  function handleShare(event, activityName, details, schedule) {
+    const shareType = event.currentTarget.dataset.shareType;
+    
+    // Construct shareable URL and text
+    const pageUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${pageUrl}#${encodeURIComponent(activityName)}`;
+    const shareText = `Check out this activity at Mergington High School: ${activityName}`;
+    const shareDescription = `${details.description}\n\nSchedule: ${schedule}`;
+    const fullShareText = `${shareText}\n\n${shareDescription}`;
+
+    switch (shareType) {
+      case "copy":
+        // Copy link to clipboard with fallback
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            showMessage("Link copied to clipboard!", "success");
+          }).catch(() => {
+            showMessage("Failed to copy link", "error");
+          });
+        } else {
+          // Fallback for older browsers (using deprecated execCommand)
+          // Note: document.execCommand is deprecated but kept for backwards compatibility
+          const textArea = document.createElement("textarea");
+          textArea.value = shareUrl;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand("copy");
+            showMessage("Link copied to clipboard!", "success");
+          } catch (err) {
+            showMessage("Failed to copy link", "error");
+          }
+          document.body.removeChild(textArea);
+        }
+        event.preventDefault();
+        break;
+
+      case "facebook":
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+        event.currentTarget.href = facebookUrl;
+        break;
+
+      case "twitter":
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        event.currentTarget.href = twitterUrl;
+        break;
+
+      case "whatsapp":
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(fullShareText + "\n" + shareUrl)}`;
+        event.currentTarget.href = whatsappUrl;
+        break;
+
+      case "email":
+        const emailSubject = encodeURIComponent(`Activity at Mergington High School: ${activityName}`);
+        const emailBody = encodeURIComponent(`${fullShareText}\n\nLearn more: ${shareUrl}`);
+        const emailUrl = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+        event.currentTarget.href = emailUrl;
+        break;
+    }
+  }
+
+  // Close share menus when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".share-container")) {
+      document.querySelectorAll(".share-menu").forEach((menu) => {
+        menu.classList.remove("show");
+      });
+    }
+  });
 
   // Event listeners for search and filter
   searchInput.addEventListener("input", (event) => {
@@ -865,4 +991,46 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthentication();
   initializeFilters();
   fetchActivities();
+
+  // Handle shared activity links (scroll to activity if hash is present)
+  if (window.location.hash) {
+    const activityName = decodeURIComponent(window.location.hash.substring(1));
+    
+    // Retry configuration for shared link navigation
+    const SCROLL_RETRY_MAX = 10;
+    const SCROLL_RETRY_INTERVAL_MS = 200;
+    
+    // Function to scroll to activity
+    const scrollToActivity = () => {
+      const activityCards = document.querySelectorAll(".activity-card h4");
+      for (const heading of activityCards) {
+        if (heading.textContent === activityName) {
+          heading.parentElement.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Highlight the activity card using CSS custom properties
+          const card = heading.parentElement;
+          card.style.transition = "box-shadow 0.3s ease";
+          card.style.boxShadow = "0 0 20px rgba(26, 35, 126, 0.5)";
+          setTimeout(() => {
+            card.style.boxShadow = "";
+          }, 2000);
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    // Try to scroll to activity with retry mechanism
+    let retries = 0;
+    
+    const tryScroll = () => {
+      if (scrollToActivity() || retries >= SCROLL_RETRY_MAX) {
+        return;
+      }
+      retries++;
+      setTimeout(tryScroll, SCROLL_RETRY_INTERVAL_MS);
+    };
+    
+    // Start attempting to scroll after a short delay
+    setTimeout(tryScroll, 300);
+  }
 });
